@@ -1,0 +1,8 @@
+Package: port_service_wandt
+Version: 1-1.0
+Depends: libc, libubox, libubus
+Source: package/miwifi/port_service
+Section: opt
+Architecture: aarch64_cortex-a53
+Installed-Size: 19035
+Description:  Auto wan port detect

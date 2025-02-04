@@ -1,0 +1,48 @@
+#! /bin/sh
+
+. /lib/miwifi/miwifi_core_libs.sh
+
+usage() {
+    echo "control hardware or software acceleration"
+    echo "  core control:"
+    echo "     restart                  -- restart accel module"
+    echo "     start                    -- start accel module"
+    echo "     stop                     -- stop accel module"
+    echo "     flush                    -- flush accel table"
+    echo " "
+    echo "  conntrack control:"
+    echo "     clean  [ipaddr netmask]  -- clean accel module conntrack by ip (default all)"
+    echo " "
+}
+
+accel_conntrack_clean() {
+    case "$1" in
+    "clean")
+        if [ $# -eq 1 ]; then
+            network_accel_hook "conntrack" "clean"
+        else
+            network_accel_hook "conntrack" "$@"
+        fi
+        ;;
+    *)
+        usage
+        ;;
+    esac
+}
+
+# main
+case "$1" in
+"restart" | "start" | "stop" | "flush")
+    network_accel_hook "$1"
+    ;;
+"conntrack")
+    shift 1
+    accel_conntrack_clean "$@"
+    ;;
+
+*)
+    usage >&2
+    exit 1
+    ;;
+esac
+exit 0

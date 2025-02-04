@@ -1,0 +1,10 @@
+/etc/syslog-ng.d/sprom.conf
+/etc/logrotate.d/stat_points
+/etc/logrotate.d/messages
+/etc/syslog-ng.d/wifilog.conf
+/etc/syslog-ng.d/spweb.conf
+/etc/syslog-ng.d/sppri.conf
+/usr/sbin/syslog_sync.sh
+/etc/init.d/milog
+/etc/syslog-ng.d/meminfo.conf
+/etc/logrotate.d/wifi_analysis

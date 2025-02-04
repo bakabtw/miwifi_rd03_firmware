@@ -1,0 +1,12 @@
+config globals 'globals'
+    option ver '2'
+    option enabled '1'
+
+config wan 'wan6'
+    option mode 'off'
+    option automode '0'
+    option automode_backup 'passthrough'
+
+config lan 'lan6'
+    option mode '0'
+

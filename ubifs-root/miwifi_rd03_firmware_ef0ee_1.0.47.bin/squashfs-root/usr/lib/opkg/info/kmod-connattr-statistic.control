@@ -1,0 +1,8 @@
+Package: kmod-connattr-statistic
+Version: 5.4.171+1.0-1.0
+Depends: kernel (=5.4.171-1-1c80d05903413caf32c376217144e237), kmod-conntrack-attr, kmod-ipt-compat-xtables
+Source: package/miwifi/connattr-statistic
+Section: kernel
+Architecture: aarch64_cortex-a53
+Installed-Size: 9567
+Description:  connattr-statistic

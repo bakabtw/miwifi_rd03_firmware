@@ -1,0 +1,8 @@
+Package: kmod-conntrack-attr
+Version: 5.4.171+1.0-1.0
+Depends: kernel (=5.4.171-1-e26d571f809e3874ff034f652b54670f)
+Source: package/miwifi/conntrack-attr
+Section: kernel
+Architecture: aarch64_cortex-a53
+Installed-Size: 7722
+Description:  conntrack-attr

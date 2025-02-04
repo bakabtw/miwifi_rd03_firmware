@@ -1,0 +1,6 @@
+/etc/mipctl/_run.sh
+/usr/lib/libsniper.so
+/etc/mipctl/mipctl_app
+/etc/mipctl/Sniper.klp
+/usr/lib/iptables/libxt_miwifi-connhaohan.so
+/usr/lib/libdpi_haohan.so

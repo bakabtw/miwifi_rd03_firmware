@@ -1,0 +1,240 @@
+config meta meta
+	option appinfo_version 0.2.5
+	option class_cnt 16
+	option class_id_base 1
+
+config app_class
+	option class_name 'class_zaixianshipin'
+	option id_in_dpi 3
+	option class_id 1
+	option app_cnt 10
+	option subclass_id_base 1
+	list app_list 'aiqiyishipin:1'
+	list app_list 'souhushipin:2'
+	list app_list 'bilibili:12'
+	list app_list 'huyazhibo:18'
+	list app_list 'mangguoTV:23'
+	list app_list 'migushipin:24'
+	list app_list 'tengxunshipin:30'
+	list app_list 'xiguashipin:34'
+	list app_list 'youkushipin:39'
+	list app_list 'buliangshipinwangzhan:111'
+
+config app_class
+	option class_name 'class_jishitongxin'
+	option id_in_dpi 7
+	option class_id 2
+	option app_cnt 7
+	option subclass_id_base 11
+	list app_list 'QQ:43'
+	list app_list 'Soul:44'
+	list app_list 'momo:51'
+	list app_list 'tantan:54'
+	list app_list 'weixin:56'
+	list app_list 'qiyeweixin:109'
+	list app_list 'aliwangwang:110'
+
+config app_class
+	option class_name 'class_youxi'
+	option id_in_dpi 8
+	option class_id 3
+	option app_cnt 54
+	option subclass_id_base 18
+	list app_list 'hepingjingying:31'
+	list app_list 'yuanshen:32'
+	list app_list 'huoyingrenzhe:36'
+	list app_list 'longzhiguowuyu:38'
+	list app_list 'moerzhuangyuan:40'
+	list app_list 'lvtuzhibin:41'
+	list app_list 'QQfeiche:42'
+	list app_list 'chuanyuehuoxianqiangzhanwangzhe:45'
+	list app_list 'wujindelagelangri:48'
+	list app_list 'koudaiqibing:50'
+	list app_list 'mingrizhihou:53'
+	list app_list 'wanguojuexing:55'
+	list app_list 'QQxuanwu:57'
+	list app_list 'shimingzhaohuanshouyou:58'
+	list app_list 'diwurenge:60'
+	list app_list 'wangzherongyao:61'
+	list app_list 'huangyeluandou:62'
+	list app_list 'moshoushijie:64'
+	list app_list 'wodeshijie:65'
+	list app_list 'minishijie:67'
+	list app_list 'dixiachengyuyongshi:68'
+	list app_list 'guangyu:69'
+	list app_list 'nishuihan:70'
+	list app_list 'tanchishedazuozhan:71'
+	list app_list 'buluochongtu:72'
+	list app_list 'jinchanchanzhizhan:73'
+	list app_list 'yingxionglianmengshouyou:74'
+	list app_list 'benghuai3:75'
+	list app_list 'yuanqiqishi:77'
+	list app_list 'mingrifangzhou:79'
+	list app_list 'bilanhangxian:80'
+	list app_list 'halibote:81'
+	list app_list 'sanguosha:82'
+	list app_list 'Steam:83'
+	list app_list 'kaixinxiaoxiaole:85'
+	list app_list 'zhanwangrenzheng:86'
+	list app_list 'EpicGames:87'
+	list app_list 'Wegame:88'
+	list app_list 'Origin:89'
+	list app_list 'yinyangshi:91'
+	list app_list 'chuanyuehuoxian:93'
+	list app_list 'zuizhonghuanxiang:94'
+	list app_list 'yubiyouxi:95'
+	list app_list 'yingxionglianmeng:96'
+	list app_list 'lushichuanshuo:97'
+	list app_list 'liufangzhilu:98'
+	list app_list 'tengxunyouxi:100'
+	list app_list 'wangyiyouxi:101'
+	list app_list 'leyuansuyouxi:102'
+	list app_list 'biliyouxi:103'
+	list app_list 'kunlunyouxi:104'
+	list app_list 'lilisiyouxi:106'
+	list app_list 'zilonghuyu:107'
+	list app_list 'liangwuyouxi:108'
+
+config app_class
+	option class_name 'class_dianzishangwu'
+	option id_in_dpi 9
+	option class_id 4
+	option app_cnt 10
+	option subclass_id_base 72
+	list app_list 'taobao:22'
+	list app_list 'jingdongshangcheng:25'
+	list app_list 'dewu:26'
+	list app_list 'tianmaoshangcheng:27'
+	list app_list 'pinduoduo:28'
+	list app_list 'xianyu:29'
+	list app_list 'taote:125'
+	list app_list 'kaolahaigou:126'
+	list app_list 'wangyiyanxuan:127'
+	list app_list 'quanqiugouqishitequan:128'
+
+config app_class
+	option class_name '_class_qitayewu'
+	option id_in_dpi 13
+	option class_id 5
+	option app_cnt 1
+	option subclass_id_base 82
+	list app_list 'qita:99'
+
+config app_class
+	option class_name 'class_shejiaoluntan'
+	option id_in_dpi 18
+	option class_id 6
+	option app_cnt 5
+	option subclass_id_base 83
+	list app_list 'xinlangweibo:3'
+	list app_list 'xiaohongshu:4'
+	list app_list 'baidutieba:5'
+	list app_list 'douban:6'
+	list app_list 'hupu:7'
+
+config app_class
+	option class_name 'class_licaiguanli'
+	option id_in_dpi 19
+	option class_id 7
+	option app_cnt 3
+	option subclass_id_base 88
+	list app_list 'zhaoshangzhengquan:115'
+	list app_list '360jietiao:122'
+	list app_list 'mayihuabei:123'
+
+config app_class
+	option class_name 'class_diantaiyinle'
+	option id_in_dpi 26
+	option class_id 8
+	option app_cnt 3
+	option subclass_id_base 91
+	list app_list 'ximalayadiantai:35'
+	list app_list 'wangyiyunyinle:112'
+	list app_list 'QQyinle:113'
+
+config app_class
+	option class_name 'class_jinrongzhifu'
+	option id_in_dpi 27
+	option class_id 9
+	option app_cnt 10
+	option subclass_id_base 94
+	list app_list 'zhifubao:8'
+	list app_list 'weixinzhifu:9'
+	list app_list 'jiaotongyinxing:116'
+	list app_list 'nongxingzhangshangyinxing:117'
+	list app_list 'youzhengchuxuyinxing:118'
+	list app_list 'zhongguoyinxing:119'
+	list app_list 'gongshangyinxing:120'
+	list app_list 'jiansheyinxing:121'
+	list app_list 'duxiaomanjinrong:124'
+	list app_list 'zhaoshangyinxing:129'
+
+config app_class
+	option class_name 'class_gonggongliuliang'
+	option id_in_dpi 28
+	option class_id 10
+	option app_cnt 1
+	option subclass_id_base 104
+	list app_list 'wangyiwang:10'
+
+config app_class
+	option class_name 'class_yuedu'
+	option id_in_dpi 29
+	option class_id 11
+	option app_cnt 4
+	option subclass_id_base 105
+	list app_list 'qidianzhongwen:11'
+	list app_list 'weixindushu:17'
+	list app_list 'QQyuedu:19'
+	list app_list 'fanqiemianfeixiaoshuo:20'
+
+config app_class
+	option class_name 'class_dongman'
+	option id_in_dpi 30
+	option class_id 12
+	option app_cnt 3
+	option subclass_id_base 109
+	list app_list 'bilibilimanhua:13'
+	list app_list 'youyaoqidongman:114'
+	list app_list 'baozoumanhua:130'
+
+config app_class
+	option class_name 'class_shipinzhibo'
+	option id_in_dpi 31
+	option class_id 13
+	option app_cnt 1
+	option subclass_id_base 112
+	list app_list 'douyu:16'
+
+config app_class
+	option class_name 'class_duanshipin'
+	option id_in_dpi 32
+	option class_id 14
+	option app_cnt 3
+	option subclass_id_base 113
+	list app_list 'douyin:14'
+	list app_list 'douyinhuoshanban:15'
+	list app_list 'kuaishou:21'
+
+config app_class
+	option class_name '_class_qitaliumeiti'
+	option id_in_dpi 35
+	option class_id 15
+	option app_cnt 4
+	option subclass_id_base 116
+	list app_list 'shishiliuchuanshuxieyi:134'
+	list app_list 'shishixinxichuanshuxieyi:135'
+	list app_list 'huihuachushixieyi:136'
+	list app_list 'tongyongshipinyinpin:137'
+
+config app_class
+	option class_name '_class_biaozhunxieyi'
+	option id_in_dpi 47
+	option class_id 16
+	option app_cnt 4
+	option subclass_id_base 120
+	list app_list 'RakNet:105'
+	list app_list 'HTTPwangyeliulan:131'
+	list app_list 'chaowenbenchuanshuanquanxieyi:132'
+	list app_list 'kuaisuUDPhulianwanglianjie:133'
+

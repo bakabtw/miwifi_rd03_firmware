@@ -1,0 +1,24 @@
+#!/bin/sh
+
+grep -q ip_account /proc/modules || exit 0
+
+[ "$ACTION" = "ifup" ] && [ "$INTERFACE" = "lan" ] && {
+	if [ -x /usr/sbin/ipaccount ]; then
+		ipaddr=$(uci get network.lan.ipaddr)
+		netmask=$(uci get network.lan.netmask)
+		/etc/init.d/trafficd init_ipaccount
+		/usr/sbin/ipaccount -S -n lan -N "$ipaddr/$netmask"
+	fi
+	return 0
+}
+
+[ "$INTERFACE" = "guest" ] && {
+	if [ -x /usr/sbin/ipaccount ]; then
+		ipaddr=$(uci get network.guest.ipaddr)
+		netmask=$(uci get network.guest.netmask)
+		/etc/init.d/trafficd init_ipaccount
+		[ "$ACTION" = "ifup" ] && /usr/sbin/ipaccount -S -n guest -N "$ipaddr/$netmask"
+#		[ "$ACTION" = "ifdown" ] && /usr/sbin/ipaccount -D -n guest
+		/usr/sbin/ipaccount -r
+	fi
+}

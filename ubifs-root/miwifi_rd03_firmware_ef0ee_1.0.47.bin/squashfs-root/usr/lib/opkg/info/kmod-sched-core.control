@@ -1,0 +1,10 @@
+Package: kmod-sched-core
+Version: 5.4.171-1
+Depends: kernel (=5.4.171-1-1c80d05903413caf32c376217144e237)
+Source: package/kernel/linux
+License: GPLv2
+Section: kernel
+Status: unknown hold not-installed
+Architecture: aarch64_cortex-a53
+Installed-Size: 12486
+Description:  Core kernel scheduler support for IP traffic

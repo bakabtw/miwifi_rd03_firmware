@@ -1,0 +1,8 @@
+Package: kmod-ipaccount2
+Version: 5.4.171+1.2-1
+Depends: kernel (=5.4.171-1-e26d571f809e3874ff034f652b54670f)
+Source: package/miwifi/trafficd
+Section: kernel
+Architecture: aarch64_cortex-a53
+Installed-Size: 13343
+Description:  ip account module

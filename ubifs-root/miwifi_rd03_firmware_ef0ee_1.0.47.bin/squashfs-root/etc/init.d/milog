@@ -1,0 +1,12 @@
+#!/bin/sh /etc/rc.common
+#
+# This script is used for internal application traffic control
+#
+
+STOP=89
+
+stop() {
+	/usr/sbin/syslog_sync.sh
+
+	return 0
+}

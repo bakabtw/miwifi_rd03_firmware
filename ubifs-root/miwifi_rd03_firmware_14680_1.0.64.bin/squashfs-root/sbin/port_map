@@ -1,0 +1,303 @@
+#!/bin/sh
+# class  :       lan               wan                iptv
+# service: [lan, lag, game]    [wan, wan_2]    [iptv, iptv-bridge]
+
+. /lib/functions.sh
+. /lib/miwifi/lib_port_map.sh
+. /lib/miwifi/miwifi_functions.sh
+
+MAP="port_map"
+SERVICE="port_service"
+
+pm_usage() {
+    cat <<-EOF
+		port_map rebuild map                             - rebuild port_map uci config
+
+		port_map rebuild network                         - rebuild network uci config
+
+		port_map port    service <lan/wan/wan_2/...>     - get port by service name
+		                 iface   <iface>                 - get port by iface
+		                 class   <lan/wan/iptv>          - get port by class
+		                 type    <eth/cpe/sfp>           - get port by type
+		                 ""                              - get all port
+
+		port_map iface   service <lan/wan/wan_2/...>     - get iface by service name
+		                 port    <port>                  - get iface by port
+
+		port_map config  get     <section> <key>         - get port_map config
+		                 set     <section> <key> <value> - set port_map config
+	EOF
+    return
+}
+
+pm_config_set() {
+    local section="$1"
+    local key="$2"
+    local value="$3"
+
+    [ -z "$value" ] || [ -z "$section" ] || [ -z "$key" ] && return
+
+    uci batch <<-EOF
+		set "$MAP"."$section"."$key"="$value"
+		commit "$MAP"
+	EOF
+    return
+}
+
+pm_config_get() {
+    local section="$1"
+    local key="$2"
+    local value=""
+
+    value=$(uci -q get "$MAP"."$section"."$key")
+    [ -n "$value" ] && echo -n "$value"
+    return
+}
+
+pm_collect_port() {
+    local item="$1"
+    local key="$2"
+    local output
+
+    [ -n "$item" ] && [ -z "$key" ] && return
+
+    case "$item" in
+        iface)
+            output=$(uci show "$MAP" | grep "ifname='$key'"  | cut -d '.' -f 2 | xargs)
+            ;;
+        service)
+            output=$(uci show "$MAP" | grep "service='$key'" | cut -d '.' -f 2 | xargs)
+            ;;
+        class)
+            if [ "$key" = "lan" ]; then
+                output=$(uci show "$MAP" | grep -E "service='la|service='game" | cut -d '.' -f 2 | xargs)
+            elif [ "$key" = "wan" ]; then
+                output=$(uci show "$MAP" | grep "service='wan"   | cut -d '.' -f 2 | xargs)
+            elif [ "$key" = "iptv" ]; then
+                output=$(uci show "$MAP" | grep "service='iptv'" | cut -d '.' -f 2 | xargs)
+            fi
+            ;;
+        type)
+            output=$(uci show "$MAP" | grep "type='$key'" | cut -d '.' -f 2 | xargs)
+            ;;
+        "")
+            output=$(uci -q get "$MAP".settings.ports)
+            ;;
+    esac
+
+    [ -n "$output" ] && echo -n "$output"
+    return
+}
+
+pm_collect_iface() {
+    local item="$1"
+    local key="$2"
+    local iface ifaces port ports
+
+    [ -n "$item" ] && [ -z "$key" ] && return
+
+    [ "$item" = "port" ] && ports="$key"
+    [ "$item" = "service" ] && ports=$(uci show "$MAP" | grep "service='$key'" | cut -d '.' -f 2 | xargs)
+
+    for port in $ports; do
+        iface=$(pm_config_get "$port" ifname)
+        append ifaces "$iface"
+    done
+    [ -n "$ifaces" ] && echo -n "$ifaces"
+}
+
+pm_rebuild_map() {
+    local port service_ports service_enable
+
+    rebuild_service() {
+        local service="$1"
+
+        config_get service_ports "$service" ports
+        config_get service_enable "$service" enable
+
+        [ "$service_enable" != "1" ] && return
+        for port in $service_ports; do
+            uci -q set "$MAP"."$port".service="$service"
+        done
+        return
+    }
+
+    # lan service
+    service_ports=$(pm_config_get settings ports)
+    for port in $service_ports; do
+        uci -q set "$MAP"."$port".service="lan"
+    done
+
+    # wan, lag, iptv service
+    config_load "$SERVICE"
+    config_foreach rebuild_service service
+    uci commit "$MAP"
+    return
+}
+
+_clean_interface() {
+    clean_interface() {
+        local interface="$1"
+        echo "$interface" | grep -sqE "^eth[0-9]_" || return
+        uci -q delete network."$interface"
+    }
+
+    clean_switch_vlan() {
+        local switch_vlan="$1"
+        [ "${switch_vlan:0:4}" != "vlan" ] && return
+        uci -q delete network."$switch_vlan"
+    }
+
+    config_load network
+    config_foreach clean_interface interface
+    config_foreach clean_switch_vlan switch_vlan
+    uci commit network
+
+    pm_extra_clean_interface
+    return
+}
+
+_build_interface() {
+    local list_vid=""
+    local vid=0
+
+    collect_vid() {
+        local service="$1"
+        local vid=""
+
+        config_get vid "$service" vid
+        [ -n "$vid" ] && {
+            list_contains list_vid "$vid" || append list_vid "$vid"
+        }
+        return
+    }
+
+    get_vid() {
+        local vid="$1"
+        vid=$((vid + 1))
+        while true; do
+            list_contains list_vid "$vid" || break
+            vid=$((vid + 1))
+        done
+        append list_vid "$vid"
+        echo "$vid"
+        return
+    }
+
+    reconfig() {
+        local port="$1"
+        local switch base_iface cpu_port phy_id real_iface service type
+
+        config_get type "$port" type
+        [ "$type" = "cpe" ] && return
+
+        config_get switch "$port" switch
+        config_get phy_id "$port" phy_id
+        config_get cpu_port "$port" cpu_port
+        config_get base_iface "$port" base_iface
+        vid=$(get_vid "$vid")
+        real_iface="${base_iface}.${vid}"
+
+        pm_config_switch_vlan "vlan${vid}" "$switch" "$phy_id" "$cpu_port" "$vid"
+        pm_config_interface "${real_iface//./_}" "$real_iface"
+        uci -q set "$MAP"."$port".vid="$vid"
+        uci -q set "$MAP"."$port".ifname="$real_iface"
+    }
+
+    config_load "$SERVICE"
+    config_foreach collect_vid attr
+
+    config_load "$MAP"
+    config_foreach reconfig port
+    uci commit "$MAP"
+
+    pm_extra_build_interface
+    return
+}
+
+pm_rebuild_network() {
+    local list_ifname_lan
+
+    _clean_interface
+    [ "$(pm_config_get settings enable_vlan)" = "1" ] && _build_interface
+
+    # reconfig network lan
+    list_ifname_lan=""
+    ports=$(pm_collect_port service lan)
+    for port in $ports; do
+        ifname=$(pm_config_get "$port" ifname)
+        type=$(pm_config_get "$port" type)
+        [ "$type" != "cpe" ] && {
+            list_contains list_ifname_lan "$ifname" || append list_ifname_lan "$ifname"
+        }
+    done
+    # game ports are also lan ports
+    ports=$(pm_collect_port service game)
+    for port in $ports; do
+        ifname=$(pm_config_get "$port" ifname)
+        append list_ifname_lan "$ifname"
+    done
+    uci batch <<-EOF
+		set network.lan.ifname="$list_ifname_lan"
+		commit network
+	EOF
+
+    # reconfig network lag's iface
+    ports=$(pm_collect_port service lag)
+    for port in $ports; do
+        ifname=$(pm_config_get "$port" ifname)
+        uci batch <<-EOF
+			set network."${ifname//./_}".force_link="1"
+			commit network
+		EOF
+    done
+
+    pm_extra_rebuild_network
+    return
+}
+
+pm_init() {
+    config_interface_portmap() {
+        local port="$1"
+        local ifname phy_id
+
+        config_get ifname "$port" ifname
+        config_get phy_id "$port" phy_id
+
+        [ -n "$ifname" ] && [ -n "$phy_id" ] && {
+            util_portmap_set "$phy_id" "$ifname"
+        }
+    }
+
+    config_load port_map
+    config_foreach config_interface_portmap port
+    return
+}
+
+# main()
+OPT="$1"
+ACTION="$2"
+shift
+shift
+case "$OPT" in
+init)
+    pm_init
+    ;;
+rebuild)
+    pm_rebuild_"$ACTION"
+    ;;
+port)
+    pm_collect_port "$ACTION" "$@"
+    ;;
+config)
+    pm_config_"$ACTION" "$@"
+    ;;
+iface)
+    pm_collect_iface "$ACTION" "$@"
+    ;;
+*)
+    pm_usage >&2
+    exit 1
+    ;;
+esac
+exit 0

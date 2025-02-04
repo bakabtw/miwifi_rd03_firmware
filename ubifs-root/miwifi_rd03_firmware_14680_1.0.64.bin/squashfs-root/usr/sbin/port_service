@@ -1,0 +1,144 @@
+#!/bin/sh
+
+LOCK_PORT_SERVICE="/var/run/port_service.lock"
+
+. /lib/miwifi/lib_port_service.sh
+
+ROUTER_SERVICES=$(ps_uci_get settings router_services)
+[ -z "$ROUTER_SERVICES" ] && ROUTER_SERVICES="lag game iptv wan wan_2"
+LIST_SERVICES="$ROUTER_SERVICES"
+
+
+init_service() {
+    port_map init
+    ps_init_service
+
+    ps_logger "init service finish"
+    return
+}
+
+stop_service() {
+    local service
+
+    ps_pre_stop_service
+    for service in $LIST_SERVICES; do
+        type "ps_${service}_ctl" | grep -qsw "function" && {
+            ps_"${service}"_ctl stop
+        }
+    done
+    ps_post_stop_service
+
+    ps_logger "stop service finish"
+    return
+}
+
+start_service() {
+    local service
+
+    # regenerate network config based on port_map config
+    rebuild_network
+
+    # start all service
+    ps_pre_start_service
+    for service in $LIST_SERVICES; do
+        type "ps_${service}_ctl" | grep -qsw "function" && {
+            ps_"${service}"_ctl start
+        }
+    done
+    ps_post_start_service
+
+    ps_logger "start service finish"
+    return
+}
+
+reload_firewall() {
+    local service
+    ps_reload_firewall_common
+    for service in $LIST_SERVICES; do
+        type "ps_${service}_ctl" | grep -qsw "function" && {
+            ps_"${service}"_ctl reload_firewall
+        }
+    done
+    return
+}
+
+rebuild_map() {
+    # regenerate port_map config based on port_service config
+    port_map rebuild map
+    ps_logger "rebuild map finish"
+    return
+}
+
+rebuild_network() {
+    port_map rebuild network
+    ps_rebuild_network
+    ps_logger "rebuild network finish"
+}
+
+check_service() {
+    local service="$1"
+    local wandt_enable=""
+
+    [ -n "$service" ] && LIST_SERVICES="$service"
+    wandt_enable=$(ps_uci_get wan wandt)
+
+    case "$service" in
+        "iptv")
+            LIST_SERVICES="iptv wan"
+            [ "1" = "$(port_map config get settings enable_vlan)" ] && LIST_SERVICES="$ROUTER_SERVICES"
+        ;;
+        "game")
+            [ "1" = "$wandt_enable" ] && LIST_SERVICES="${LIST_SERVICES} wan"
+        ;;
+        "lag")
+            [ "1" = "$wandt_enable" ] && LIST_SERVICES="${LIST_SERVICES} wan"
+        ;;
+        *)
+        ;;
+    esac
+
+    ps_check_service "$service"
+
+    ps_logger "check service finish: $LIST_SERVICES"
+    return
+}
+
+
+#******** main ********#
+case "$1" in
+redetect)
+    shift
+    ps_wandt_ctl redetect_wan "$@"
+    exit 0
+    ;;
+reloadfw)
+    reload_firewall
+    exit 0
+    ;;
+esac
+
+trap "lock -u $LOCK_PORT_SERVICE; exit 1" SIGHUP SIGINT SIGTERM
+lock $LOCK_PORT_SERVICE
+check_service "$2"
+case "$1" in
+remap)
+    rebuild_map
+    ;;
+restart)
+    stop_service
+    rebuild_map
+    start_service
+    ;;
+init)
+    init_service
+    ;;
+start)
+    start_service
+    ;;
+stop)
+    stop_service
+    ;;
+esac
+
+lock -u $LOCK_PORT_SERVICE
+exit 0

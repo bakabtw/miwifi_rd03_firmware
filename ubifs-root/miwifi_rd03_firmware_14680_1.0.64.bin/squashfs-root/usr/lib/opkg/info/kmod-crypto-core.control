@@ -1,0 +1,10 @@
+Package: kmod-crypto-core
+Version: 5.4.171-1
+Depends: kernel (=5.4.171-1-e26d571f809e3874ff034f652b54670f)
+Source: package/kernel/linux
+License: GPLv2
+Section: kernel
+Status: unknown hold not-installed
+Architecture: aarch64_cortex-a53
+Installed-Size: 105
+Description:  Core CryptoAPI modules

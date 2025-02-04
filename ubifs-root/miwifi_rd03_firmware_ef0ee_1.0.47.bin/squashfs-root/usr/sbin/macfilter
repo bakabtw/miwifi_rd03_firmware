@@ -1,0 +1,271 @@
+#! /bin/sh
+. /lib/functions.sh
+. /lib/lib.scripthelper.sh
+dlog "INFO: macfilter input ARGS: $@"
+action="$1"
+shift
+#Global Setting
+LOCKFILE="/var/lock/`basename $0`"
+IN_INTERFACE="br-lan"
+FILTER_CHAIN="macfilter_wan"
+NETFILTER_TABLE="filter"
+macfilter_conf="/etc/config/macfilter"
+IPT="iptables"
+IP6T="ip6tables"
+FORWARD_CHAIN="forwarding_lan_rule"
+[ -n "$(uci -q get network.guest)" ] && FORWARD_CHAIN="forwarding_lan_rule forwarding_guest_rule"
+#Funtion Define
+flush_iptables_rule(){
+	iptables -t filter -F $FILTER_CHAIN 2>/dev/null
+	dlog "macfilter: flush iptables rules"
+}
+flush_ip6tables_rule(){
+	ip6tables -t filter -F $FILTER_CHAIN 2>/dev/null
+	dlog "macfilter: flush ip6tables rules"
+}
+flush_rule(){
+	flush_iptables_rule
+	flush_ip6tables_rule
+}
+
+def_white_rule(){
+    local IPT="iptables -t filter"
+    $IPT -A $FILTER_CHAIN -j REJECT 2>/dev/null
+
+    local IP6T="ip6tables -t filter"
+    $IP6T -A $FILTER_CHAIN -j REJECT 2>/dev/null
+    dlog "macfilter: add def white rule"
+}
+
+getJsonValues() {
+    awk -v json="$1" -v key="$2" -v defaultValue="$3" 'BEGIN{
+        foundKeyCount = 0
+        while (length(json) > 0) {
+            # pos = index(json, "\""key"\"");
+            pos = match(json, "\""key"\"[ \\t]*?:[ \\t]*");
+            if (pos == 0) {if (foundKeyCount == 0) {print defaultValue;} exit 0;}
+
+            ++foundKeyCount;
+            start = 0; stop = 0; layer = 0;
+            for (i = pos + length(key) + 1; i <= length(json); ++i) {
+                lastChar = substr(json, i - 1, 1)
+                currChar = substr(json, i, 1)
+
+                if (start <= 0) {
+                    if (lastChar == ":") {
+                        start = currChar == " " ? i + 1: i;
+                        if (currChar == "{" || currChar == "[") {
+                            layer = 1;
+                        }
+                    }
+                } else {
+                    if (currChar == "{" || currChar == "[") {
+                        ++layer;
+                    }
+                    if (currChar == "}" || currChar == "]") {
+                        --layer;
+                    }
+                    if ((currChar == "," || currChar == "}" || currChar == "]") && layer <= 0) {
+                        stop = currChar == "," ? i : i + 1 + layer;
+                        break;
+                    }
+                }
+            }
+
+            if (start <= 0 || stop <= 0 || start > length(json) || stop > length(json) || start >= stop) {
+                if (foundKeyCount == 0) {print defaultValue;} exit 0;
+            } else {
+                print substr(json, start, stop - start);
+            }
+
+            json = substr(json, stop + 1, length(json) - stop)
+        }
+    }'
+}
+
+clearConntrackSession(){
+	local mac="$1"
+	local netmask="$(uci get network.lan.netmask)"
+	local ip="$(ubus call trafficd hw | jsonfilter -e "@['$mac']['ip_list'][0]['ip']")"
+
+	if [ -z "$ip" ]; then
+		echo f > /proc/net/nf_conntrack 2>/dev/null
+		[ -f /sbin/accelctrl ] && /sbin/accelctrl conntrack clean
+		return
+	else
+		echo $ip > /proc/net/nf_conntrack 2>/dev/null
+		[ -f /sbin/accelctrl ] && /sbin/accelctrl conntrack clean $ip $netmask
+	fi
+}
+
+parse_rule(){
+	local mac="$1"
+	local action="$2"
+
+	[ "${mac:0:18}" = "00_00_00_00_00_00_" ] && return
+
+	if [ -z "$action" ]; then
+		action="$(uci -q get macfilter.wan.mode)"
+	fi
+	if [ "$action" == "black" ]; then
+		action=" -j REJECT"
+	elif [ "$action" == "white" ];then
+		action=" -j RETURN"
+	else
+		elog "parse_rule fail"
+	fi
+	mac=${mac//_/:}
+	$IPT -t $NETFILTER_TABLE -I $FILTER_CHAIN -m mac --mac-source $mac $action
+	$IP6T -t $NETFILTER_TABLE -I $FILTER_CHAIN -m mac --mac-source $mac $action
+}
+
+apply_rule(){
+	mode="$1"
+	config_load macfilter
+	config_foreach parse_rule "$mode"
+}
+
+macfilter_init(){
+	local chain
+
+	iptables -t filter -F $FILTER_CHAIN 2>/dev/null
+	! iptables -t filter -L $FILTER_CHAIN 2>&- >&- && {
+		iptables -t filter -N $FILTER_CHAIN 2>/dev/null
+	}
+
+	for chain in $FORWARD_CHAIN; do
+		iptables -t filter -C "$chain" -j $FILTER_CHAIN 2>/dev/null || {
+			iptables -t filter -I "$chain" -j $FILTER_CHAIN 2>/dev/null
+		}
+	done
+
+	ip6tables -t filter -F $FILTER_CHAIN 2>/dev/null
+	ip6tables -t filter -L $FILTER_CHAIN 2>&- >&-
+	! ip6tables -t filter -L $FILTER_CHAIN 2>&- >&- && {
+		ip6tables -t filter -N $FILTER_CHAIN 2>/dev/null
+	}
+
+	for chain in $FORWARD_CHAIN; do
+		ip6tables -t filter -C "$chain" -j $FILTER_CHAIN 2>/dev/null || {
+			ip6tables -t filter -I "$chain" -j $FILTER_CHAIN 2>/dev/null
+		}
+	done
+}
+
+init(){
+	#macfilter chains to table filter chain forwarding_rule
+	mode="$1"
+	dlog "macfilter: init rule"
+	#init wan rule
+	if [ $mode = "white" ]; then
+		def_white_rule
+	fi
+	apply_rule $mode
+}
+
+add_rule(){
+	local action=$1
+	local mac=$2
+
+	if [ "$action" == "black" ]; then
+		action=" -j REJECT"
+	elif [ "$action" == "white" ];then
+		action=" -j RETURN"
+	else
+		elog "add_rule fail"
+	fi
+	$IPT -t $NETFILTER_TABLE -I $FILTER_CHAIN -m mac --mac-source $mac $action
+	$IP6T -t $NETFILTER_TABLE -I $FILTER_CHAIN -m mac --mac-source $mac $action
+	return
+}
+
+delete_rule(){
+	local action=$1
+	local mac=$2
+
+	if [ "$action" == "black" ]; then
+		action=" -j REJECT"
+	elif [ "$action" == "white" ];then
+		action=" -j RETURN"
+	else
+		elog "delete action fail"
+		return
+	fi
+	$IPT -t $NETFILTER_TABLE -D $FILTER_CHAIN -m mac --mac-source $mac $action
+	$IP6T -t $NETFILTER_TABLE -D $FILTER_CHAIN -m mac --mac-source $mac $action
+	return
+}
+
+usage(){
+	case "$0" in
+		init)
+			#读取配置，初始化ip过滤
+			elog "USAGE: $0 macfilter init"
+		;;
+		enable)
+			#配置全局规则，开关、黑白名单模式
+			elog "USAGE: $0 macfilter <enable> [enable:0|1] [mode:black|white] [wan:yes|no]"
+		;;
+		set)
+			#wan表示禁止/允许访问广域网
+			elog "USAGE: $0 macfilter <set> [mode:black|white] [mac] [filter:wan] [rulename:xxx]"
+		;;
+		del)
+			elog "USAGE: $0 macfilter <del> [mode:black|white] [mac] [filter:wan] "
+		;;
+	esac
+	return 0
+}
+
+
+lock $LOCKFILE
+
+firewall_enable=$(uci -q get firewall.@defaults[0].fw_enable)
+[ "$firewall_enable" = "0" ] && {
+	lock -u $LOCKFILE
+	exit 0
+}
+
+case "$action" in
+	init|INIT)
+		open="$(uci -q get macfilter.wan.enable)"
+		mode="$(uci -q get macfilter.wan.mode)"
+		macfilter_init
+		if [ "$open" = "1" ]; then
+			flush_rule
+			init $mode
+			clearConntrackSession
+		elif [ "$open" = "0" ]; then
+			flush_rule
+		fi
+		;;
+	enable|ENABLE)
+		open=$1
+		mode=$2
+		if [ "$open" = "1" ]; then
+			flush_rule
+			init $mode
+			clearConntrackSession
+		elif [ "$open" = "0" ]; then
+			flush_rule
+		fi
+	;;
+	add|ADD)
+		mode=$1
+		mac=$2
+		add_rule $mode $mac
+		clearConntrackSession $mac
+	;;
+	del|DEL)
+		mac=$2
+		mode=$1
+		delete_rule $mode $mac
+		clearConntrackSession $mac
+	;;
+	*)
+		elog "WARNING: Unsupport Function In Macfilter!"
+		usage
+	;;
+esac
+lock -u $LOCKFILE
+exit 0

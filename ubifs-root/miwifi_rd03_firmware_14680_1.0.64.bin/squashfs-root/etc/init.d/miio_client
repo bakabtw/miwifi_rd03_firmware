@@ -1,0 +1,42 @@
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+START=99
+
+NAME=miio_client
+MIIO_CONFIG="/data/miio_ot/"
+
+start_service() {
+	local key pid ver dbg mid
+
+	key=$(uci -q get miio_ot.ot.bind_key)
+	pid=$(uci -q get miio_ot.ot.partner_id)
+	ver=$(uci -q get miio_ot.ot.ver)
+	dbg=$(uci -q get miio_ot.dbg.dbg)
+	mid=$(head -c 1000 /dev/urandom | tr -dc 1-9 | head -c5)
+
+	if [ "$ver" = "1" ]; then
+		# for v1 version key and pid should be exist
+		if [ -z "$key" ] || [ -z "$pid" ]; then
+			return
+		fi
+	fi
+
+	mkdir -p "$MIIO_CONFIG"
+
+	procd_open_instance
+	procd_set_param command "$NAME" -d "$MIIO_CONFIG" -l 2
+	procd_set_param respawn 3600 5 0
+	procd_close_instance
+
+	procd_open_instance
+	procd_set_param command miio_client_helper_nomqtt.sh
+	[ "${dbg:-0}" = "1" ] && procd_append_param command -d
+	procd_set_param respawn
+	procd_close_instance
+
+	procd_open_instance
+	procd_set_param command miio_proxy -l 9 -i "$mid"
+	procd_set_param respawn
+	procd_close_instance
+}

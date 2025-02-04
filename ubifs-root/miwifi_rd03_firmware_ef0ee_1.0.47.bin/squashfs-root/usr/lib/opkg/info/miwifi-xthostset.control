@@ -1,0 +1,8 @@
+Package: miwifi-xthostset
+Version: 1.0-1.0
+Depends: libc, kmod-miwifi-xthostset
+Source: package/miwifi/miwifi-xthostset
+Section: opt
+Architecture: aarch64_cortex-a53
+Installed-Size: 2147
+Description:  TODO
