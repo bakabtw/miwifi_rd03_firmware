@@ -1,0 +1,45 @@
+# restart to apply changes of meta/extension
+# reload(sighup) to apply changes of consumer
+
+#Examples:
+#config meta nfnlq
+#    option queue_base '0'
+#    list cpu_affinity '0001'
+#    list cpu_affinity '0010'
+#    list cpu_affinity '0100'
+#    list cpu_affinity '1000'
+#
+#config extension haohan
+#    option path '/usr/lib/libxxx.so'
+#    list pre_targets '-m comment --comment pre_target'
+#    list matches '-m comment --comment matches'
+#
+#config consumer mipctl
+#    list depends 'haohan'
+#
+
+config extension 'haohan'
+    option path '/usr/lib/libdpi_haohan.so'
+    list pre_targets 'IF'
+    list pre_targets     '-m miwifi-connhaohan --inspecting'
+    list pre_targets     'AND'
+    list pre_targets     '-p tcp'
+    list pre_targets     'AND'
+    list pre_targets     'NOT -m conntrack --ctstate ESTABLISHED --ctstatus ASSURED'
+    list pre_targets 'THEN'
+    list pre_targets     '-j MARK --set-mark 0x20/0x20' # disable hw accel
+    list pre_targets 'FI'
+
+    list matches '-m miwifi-connhaohan --inspecting'
+    list matches 'AND'
+    list matches '('
+    list matches     '! -p tcp'
+    list matches     'OR'
+    list matches     '-m conntrack --ctstate ESTABLISHED --ctstatus ASSURED'
+    list matches ')'
+
+config meta nfnlq
+    option queue_base '0'
+    list cpu_affinity '01'
+    list cpu_affinity '10'
+

@@ -1,0 +1,8 @@
+Package: miparentalctl_v2
+Version: 1.0-1.0
+Depends: libc, firewall_cpp, wrt_cppwrap, libstdcpp, connattr-label, connattr-statistic, haohan_dpi, libubus, libuci, libsqlite3, miwifi-xtcounter, miwifi-xthostset, luci-mod-func-mipctl, iptables-mod-conntrack-extra, sqlite_modern_cpp
+Source: package/miwifi/miparentalctl_v2
+Section: opt
+Architecture: aarch64_cortex-a53
+Installed-Size: 114246
+Description:  TODO

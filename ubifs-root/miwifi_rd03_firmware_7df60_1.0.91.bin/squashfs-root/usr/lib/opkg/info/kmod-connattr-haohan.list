@@ -1,0 +1,2 @@
+/etc/modules.d/50-connattr-haohan
+/lib/modules/5.4.171/connattr-haohan.ko

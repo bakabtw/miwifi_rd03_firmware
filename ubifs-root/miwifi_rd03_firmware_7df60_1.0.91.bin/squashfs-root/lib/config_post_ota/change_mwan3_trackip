@@ -1,0 +1,14 @@
+#!/bin/sh
+[ -f /etc/config/mwan3 ] && {
+    uci batch <<-EOF
+        del mwan3.wan.track_ip
+        add_list mwan3.wan.track_ip="223.5.5.5"
+        add_list mwan3.wan.track_ip="180.76.76.76"
+        add_list mwan3.wan.track_ip="119.29.29.29"
+        del mwan3.wan_2.track_ip
+        add_list mwan3.wan_2.track_ip="223.5.5.5"
+        add_list mwan3.wan_2.track_ip="180.76.76.76"
+        add_list mwan3.wan_2.track_ip="119.29.29.29"
+        commit mwan3
+	EOF
+}

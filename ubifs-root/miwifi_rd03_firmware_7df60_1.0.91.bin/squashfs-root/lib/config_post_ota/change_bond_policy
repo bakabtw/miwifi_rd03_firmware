@@ -1,0 +1,6 @@
+#!/bin/sh
+
+[ -f /etc/config/port_service ] && {
+    uci set port_service.lag_attr.mode='2'
+    uci commit port_service
+}
